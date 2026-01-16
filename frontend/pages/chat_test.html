@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>HTMX Streaming Chat</title>
+
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script src="https://unpkg.com/htmx.org/dist/ext/sse.js"></script>
+
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .ai {
+      white-space: pre-wrap;
+      color: #0a7;
+      border-left: 3px solid #0a7;
+      padding-left: 8px;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+
+<body>
+<h1 style="color:red; font-size:28px">
+  NEW STREAMING PAGE — NO FORM
+</h1>
+
+
+<h2>AI Support Chat (Streaming + Billing)</h2>
+
+<input
+  id="question"
+  type="text"
+  placeholder="Ask something..."
+  style="width:300px"
+/>
+
+<button onclick="startStream()">Send</button>
+
+<div id="ai-response" class="ai" hx-ext="sse"></div>
+
+<script>
+function startStream() {
+  const q = document.getElementById("question").value;
+  const target = document.getElementById("ai-response");
+
+  if (!q) return;
+
+  target.innerHTML = "";
+
+  // 🔥 THIS LINE STARTS STREAMING
+  target.setAttribute(
+    "sse-connect",
+    "/chat/stream/?message=" + encodeURIComponent(q)
+  );
+
+  target.setAttribute("sse-swap", "message");
+
+  htmx.process(target);
+}
+</script>
+
+</body>
+</html>

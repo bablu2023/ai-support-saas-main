@@ -1,0 +1,67 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+  <style>
+    body {
+      font-family: system-ui;
+      padding: 30px;
+      background: #f6f7f9;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      margin-bottom: 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+    .big {
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .muted {
+      color: #666;
+    }
+    .btn {
+      display: inline-block;
+      padding: 10px 14px;
+      background: #0a7;
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Dashboard</h1>
+
+<div class="card">
+  <div class="big">{{ organization.name }}</div>
+  <div class="muted">Organization</div>
+</div>
+
+<div class="card">
+  <div class="big">{{ plan.name }}</div>
+  <div class="muted">
+    Plan · ₹{{ plan.price }}/month
+  </div>
+</div>
+
+<div class="card">
+  <div class="big">{{ total_tokens }}</div>
+  <div class="muted">Tokens used this month</div>
+</div>
+
+<div class="card">
+  <a href="/chat/test-htmx/" class="btn">Open Chat</a>
+</div>
+
+<div class="card">
+  <a href="/logout/" class="muted">Logout</a>
+</div>
+
+</body>
+</html>
+

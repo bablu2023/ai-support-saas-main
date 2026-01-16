@@ -1,0 +1,16 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Widget{% endblock %}
+
+{% block content %}
+<h1>Widget Embed</h1>
+
+<div class="card">
+    <p>Copy this snippet and paste it into your website:</p>
+
+    {% if snippet %}
+        <code>{{ snippet }}</code>
+    {% else %}
+        <p>No widget available.</p>
+    {% endif %}
+</div>
+{% endblock %}

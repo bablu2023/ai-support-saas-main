@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HTMX Test</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body>
+
+<h2>HTMX Test Page</h2>
+
+<button
+    hx-get="/chat/test-htmx/"
+    hx-target="#chat-container"
+    hx-swap="innerHTML">
+    Load Chat Sessions
+</button>
+
+<div id="chat-container">
+    <!-- HTMX content loads here -->
+</div>
+
+</body>
+</html>

@@ -1,0 +1,21 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Chat Logs{% endblock %}
+
+{% block content %}
+<h1>Chat Logs</h1>
+
+{% for session in logs %}
+<div class="card">
+    <h4>Session {{ session.session_id }}</h4>
+
+    {% for msg in session.messages %}
+        <p>
+            <strong>{{ msg.role }}:</strong>
+            {{ msg.content }}
+        </p>
+    {% endfor %}
+</div>
+{% empty %}
+<p>No logs found.</p>
+{% endfor %}
+{% endblock %}

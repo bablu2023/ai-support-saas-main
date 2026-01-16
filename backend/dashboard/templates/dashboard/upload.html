@@ -1,0 +1,26 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Upload Knowledge{% endblock %}
+
+{% block content %}
+<h1>Upload Knowledge</h1>
+
+<div class="card">
+    {% if status %}
+        <p><strong>{{ status }}</strong></p>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <label>API Key</label>
+        <input type="text" name="api_key" required>
+
+        <label>Title</label>
+        <input type="text" name="title" required>
+
+        <label>Text</label>
+        <textarea name="text" rows="6" required></textarea>
+
+        <button type="submit">Upload</button>
+    </form>
+</div>
+{% endblock %}

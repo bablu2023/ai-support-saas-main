@@ -1,0 +1,7 @@
+<ul>
+  {% for chat in chat_sessions %}
+    <li>{{ chat.id }} — {{ chat.title|default:"Chat Session" }}</li>
+  {% empty %}
+    <li>No chat sessions</li>
+  {% endfor %}
+</ul>

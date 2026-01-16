@@ -1,0 +1,18 @@
+<form
+    hx-post="/chat/test-htmx/"
+    hx-target="#messages"
+    hx-swap="innerHTML"
+    hx-on="htmx:afterRequest: this.reset()"
+    method="post">
+
+    {% csrf_token %}
+
+    <input
+        type="text"
+        name="message"
+        placeholder="Ask something..."
+        required>
+
+    <button type="submit">Send</button>
+</form>
+

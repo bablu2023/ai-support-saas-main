@@ -1,0 +1,15 @@
+<ul>
+  {% for msg in messages %}
+    <li>
+      <strong>
+        {% if msg.role == "user" %}
+          You
+        {% else %}
+          AI
+        {% endif %}
+        :
+      </strong>
+      {{ msg.content }}
+    </li>
+  {% endfor %}
+</ul>

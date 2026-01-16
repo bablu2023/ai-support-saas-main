@@ -1,0 +1,64 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pricing</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+
+<h1>Upgrade Plan</h1>
+
+{% for plan in plans %}
+  <div style="border:1px solid #ccc; padding:16px; margin:10px">
+    <h2>{{ plan.name }}</h2>
+    <p>₹{{ plan.price }} / month</p>
+    <p>Tokens: {{ plan.monthly_token_limit }}</p>
+
+    <button onclick="pay('{{ plan.id }}')">
+      Upgrade to {{ plan.name }}
+    </button>
+  </div>
+{% endfor %}
+
+<script>
+async function pay(planId) {
+  const res = await fetch("/billing/create-payment/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": "{{ csrf_token }}"
+    },
+    body: JSON.stringify({
+      org_id: {{ organization.id }},
+      plan_id: planId
+    })
+  });
+
+  const data = await res.json();
+
+  const options = {
+    key: data.key,
+    amount: data.amount * 100,
+    currency: "INR",
+    order_id: data.order_id,
+    handler: async function (response) {
+      await fetch("/billing/verify-payment/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify(response)
+      });
+      alert("Plan upgraded successfully!");
+      window.location.reload();
+    }
+  };
+
+  new Razorpay(options).open();
+}
+</script>
+
+</body>
+</html>
