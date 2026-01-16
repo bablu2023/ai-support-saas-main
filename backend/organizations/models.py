@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+import secrets   # 👈 ADD THIS
 
 
 class Organization(models.Model):
@@ -13,34 +14,18 @@ class Organization(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    api_key = models.CharField(          # 👈 ADD THIS BLOCK
+        max_length=64,
+        unique=True,
+        blank=True,
+        null=True,
+        db_index=True,
+    )
+
+    def save(self, *args, **kwargs):      # 👈 ADD THIS METHOD
+        if not self.api_key:
+            self.api_key = "org_" + secrets.token_hex(16)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
-
-
-class OrganizationMember(models.Model):
-    organization = models.ForeignKey(
-        Organization,
-        on_delete=models.CASCADE,
-        related_name="members",
-    )
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="organization_memberships",
-    )
-    role = models.CharField(
-        max_length=20,
-        choices=[
-            ("owner", "Owner"),
-            ("admin", "Admin"),
-            ("member", "Member"),
-        ],
-        default="member",
-    )
-    joined_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ("organization", "user")
-
-    def __str__(self):
-        return f"{self.user} @ {self.organization} ({self.role})"
