@@ -5,6 +5,14 @@ from django.db.models.signals import post_migrate
 class OrganizationsConfig(AppConfig):
     name = "organizations"
 
-    def ready(self):
-        from .signals import create_default_plan
-        post_migrate.connect(create_default_plan, sender=self)
+#    def ready(self):
+ #       from .signals import create_default_plan
+ #       post_migrate.connect(create_default_plan, sender=self)
+#
+
+
+
+
+def ready(self):
+    from . import signals
+    post_migrate.connect(signals.create_default_plan, sender=self)

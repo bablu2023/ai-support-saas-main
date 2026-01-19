@@ -4,6 +4,7 @@ from django.db import models
 
 class Organization(models.Model):
     name = models.CharField(max_length=255)
+
     plan = models.ForeignKey(
         "billing.Plan",
         on_delete=models.PROTECT,
@@ -11,6 +12,9 @@ class Organization(models.Model):
         blank=True,
         related_name="organizations",
     )
+
+    monthly_tokens_used = models.PositiveBigIntegerField(default=0)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

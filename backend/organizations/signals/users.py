@@ -7,30 +7,12 @@ from organizations.constants import ORG_OWNER
 
 User = get_user_model()
 
-def create_default_plan(sender, **kwargs):
-    from billing.models import Plan
-    from organizations.models import Organization
-
-    free_plan, _ = Plan.objects.get_or_create(
-        name="Free",
-        defaults={
-            "monthly_token_limit": 10000,
-            "price": 0,
-        },
-    )
-
-    Organization.objects.filter(plan__isnull=True).update(plan=free_plan)
-
-
-    
-
-
 @receiver(post_save, sender=User)
 def create_org_for_new_user(sender, instance, created, **kwargs):
     if not created:
         return
 
-    # prevent duplicate orgs (VERY IMPORTANT)
+    # prevent duplicates (very important)
     if OrganizationMember.objects.filter(user=instance).exists():
         return
 
@@ -44,4 +26,3 @@ def create_org_for_new_user(sender, instance, created, **kwargs):
         role=ORG_OWNER,
         is_active=True,
     )
-

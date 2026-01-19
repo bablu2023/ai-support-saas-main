@@ -14,6 +14,13 @@ from chat.models import ChatSession, ChatMessage
 from knowledge.services.ingestion import ingest_plain_text
 
 
+
+from django.http import JsonResponse
+
+from organizations.permissions import user_has_role
+from organizations.constants import ORG_OWNER, ORG_ADMIN
+
+
 # =========================
 # CHAT API (ENFORCED)
 # =========================
@@ -194,4 +201,19 @@ def health(request):
         "status": "ok",
         "database": db_status,
     })
+
+# additional view with role-based access control
+
+
+def org_admin_only_view(request, org_id):
+    try:
+        organization = Organization.objects.get(id=org_id)
+    except Organization.DoesNotExist:
+        return JsonResponse({"detail": "Organization not found"}, status=404)
+
+    if not user_has_role(request.user, organization, [ORG_OWNER, ORG_ADMIN]):
+        return JsonResponse({"detail": "Permission denied"}, status=403)
+
+    return JsonResponse({"message": "Access granted"})
+
 

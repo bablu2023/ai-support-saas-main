@@ -59,15 +59,16 @@ INSTALLED_APPS = [
     "django_htmx",
 
     # Local apps
-    "organizations",
+    "organizations.apps.OrganizationsConfig",  # 👈 IMPORTANT
     "billing",
     "api",
     "channels",
     "chat",
     "knowledge",
     "dashboard",
-    "newuser"
+    "newuser",
 ]
+
 
 
 # =========================
@@ -80,6 +81,10 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+
+    # 👇 ADD THIS LINE
+    "organizations.middleware.OrganizationMiddleware",
+
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
