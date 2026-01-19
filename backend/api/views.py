@@ -177,3 +177,21 @@ def chat_logs(request):
         )
 
     return Response(response_data, status=status.HTTP_200_OK)
+
+# check system health
+from django.http import JsonResponse
+from django.db import connection
+
+def health(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        db_status = "ok"
+    except Exception:
+        db_status = "error"
+
+    return JsonResponse({
+        "status": "ok",
+        "database": db_status,
+    })
+
