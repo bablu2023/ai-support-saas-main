@@ -21,6 +21,18 @@ from organizations.permissions import user_has_role
 from organizations.constants import ORG_OWNER, ORG_ADMIN
 
 
+from agents.executor import run_agent
+from agents.task_agent import TaskAgent
+
+
+from organizations.models import OrganizationInvite
+
+
+
+from organizations.models import OrganizationMember
+
+
+
 # =========================
 # CHAT API (ENFORCED)
 # =========================
@@ -215,5 +227,100 @@ def org_admin_only_view(request, org_id):
         return JsonResponse({"detail": "Permission denied"}, status=403)
 
     return JsonResponse({"message": "Access granted"})
+
+
+
+
+
+def agent_task(request):
+    input_text = request.POST.get("input")
+
+    if not input_text:
+        return JsonResponse({"detail": "Input required"}, status=400)
+
+    try:
+        result = run_agent(TaskAgent, request, input_text)
+    except PermissionError as e:
+        return JsonResponse({"detail": str(e)}, status=402)
+
+    return JsonResponse({
+        "agent": TaskAgent.name,
+        "result": result.output,
+        "tokens_used": result.tokens_used,
+    })
+
+
+
+
+# =========================
+
+
+
+def invite_user(request):
+    org = request.organization
+
+    if not org or request.org_member.role not in [ORG_OWNER, ORG_ADMIN]:
+        return JsonResponse({"detail": "Permission denied"}, status=403)
+
+    email = request.POST.get("email")
+    role = request.POST.get("role", "member")
+
+    if not email:
+        return JsonResponse({"detail": "Email required"}, status=400)
+
+    invite = OrganizationInvite.objects.create(
+        organization=org,
+        email=email,
+        role=role,
+    )
+
+    invite_link = f"http://localhost:8000/api/accept-invite/{invite.token}/"
+    print("INVITE LINK:", invite_link)
+
+    return JsonResponse({"message": "Invite created"})
+
+
+
+
+
+def accept_invite(request, token):
+    if not request.user.is_authenticated:
+        return JsonResponse(
+            {"detail": "Authentication required"},
+            status=401,
+        )
+
+    try:
+        invite = OrganizationInvite.objects.get(token=token)
+    except OrganizationInvite.DoesNotExist:
+        return JsonResponse(
+            {"detail": "Invalid invite"},
+            status=400,
+        )
+
+    if invite.accepted_at is not None:
+        return JsonResponse(
+            {"detail": "Invite already used"},
+            status=400,
+        )
+
+    OrganizationMember.objects.get_or_create(
+        user=request.user,
+        organization=invite.organization,
+        defaults={"role": invite.role},
+    )
+
+    invite.accepted_at = timezone.now()
+    invite.save(update_fields=["accepted_at"])
+
+    return JsonResponse(
+        {
+            "message": "Successfully joined organization",
+            "organization": invite.organization.name,
+        }
+    )
+
+
+
 
 

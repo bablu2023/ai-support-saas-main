@@ -3,7 +3,11 @@ from .views import (
     chat_api,
     widget_snippet,
     upload_text_knowledge,
-    chat_logs,health
+    chat_logs,
+    health,
+    invite_user,
+    accept_invite,
+    agent_task,   # 👈 ADD THIS LINE
 )
 
 urlpatterns = [
@@ -12,7 +16,16 @@ urlpatterns = [
     path("widget/snippet/", widget_snippet),
     path("knowledge/text/", upload_text_knowledge),
     path("health/", health, name="health"),
+    path("agent/task/", agent_task),
 ]
+
+
+
+
+
+
+
+
 
 
 
