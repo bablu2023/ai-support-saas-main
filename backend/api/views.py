@@ -31,7 +31,7 @@ from organizations.models import OrganizationInvite
 
 from organizations.models import OrganizationMember
 
-
+from agents.workflow_agent import WorkflowAgent
 
 # =========================
 # CHAT API (ENFORCED)
@@ -319,6 +319,28 @@ def accept_invite(request, token):
             "organization": invite.organization.name,
         }
     )
+
+
+
+
+
+def agent_workflow(request):
+    input_text = request.POST.get("input")
+
+    if not input_text:
+        return JsonResponse({"detail": "Input required"}, status=400)
+
+    try:
+        result = run_agent(WorkflowAgent, request, input_text)
+    except PermissionError as e:
+        return JsonResponse({"detail": str(e)}, status=402)
+
+    return JsonResponse({
+        "agent": WorkflowAgent.name,
+        "result": result.output,
+        "tokens_used": result.tokens_used,
+    })
+
 
 
 

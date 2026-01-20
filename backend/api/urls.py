@@ -7,7 +7,8 @@ from .views import (
     health,
     invite_user,
     accept_invite,
-    agent_task,   # 👈 ADD THIS LINE
+    agent_task,
+    agent_workflow,   # 👈 ADD THIS LINE
 )
 
 urlpatterns = [
@@ -17,6 +18,8 @@ urlpatterns = [
     path("knowledge/text/", upload_text_knowledge),
     path("health/", health, name="health"),
     path("agent/task/", agent_task),
+    path("agent/workflow/", agent_workflow),
+
 ]
 
 
