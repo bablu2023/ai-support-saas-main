@@ -1,0 +1,5 @@
+services:
+  - type: redis
+    name: ai-support-redis
+    plan: free
+    region: singapore
