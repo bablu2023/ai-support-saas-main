@@ -9,6 +9,8 @@ from .views import (
     accept_invite,
     agent_task,
     agent_workflow,   # 👈 ADD THIS LINE
+    approve_agent_tool,
+    reject_agent_tool,
 )
 
 urlpatterns = [
@@ -19,6 +21,17 @@ urlpatterns = [
     path("health/", health, name="health"),
     path("agent/task/", agent_task),
     path("agent/workflow/", agent_workflow),
+    path(
+    "agent/approval/<int:approval_id>/approve/",
+    approve_agent_tool,
+    ),
+    path(
+    "agent/approval/<int:approval_id>/reject/",
+    reject_agent_tool,
+    ),
+    path("agent/approvals/pending/", pending_approvals),
+
+
 
 ]
 

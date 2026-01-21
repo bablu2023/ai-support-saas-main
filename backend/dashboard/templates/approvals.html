@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Agent Approvals</title>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body>
+  <h2>Pending Agent Approvals</h2>
+
+  <div id="approvals"
+       hx-get="/api/agent/approvals/pending/"
+       hx-trigger="load, every 5s"
+       hx-swap="innerHTML">
+  </div>
+
+  <script>
+    document.body.addEventListener("htmx:afterRequest", (e) => {
+      if (e.detail.xhr.responseText.startsWith("[")) {
+        const approvals = JSON.parse(e.detail.xhr.responseText);
+        const container = document.getElementById("approvals");
+
+        container.innerHTML = approvals.map(a => `
+          <div style="border:1px solid #ccc;padding:10px;margin:10px;">
+            <b>Agent:</b> ${a.agent}<br/>
+            <b>Tool:</b> ${a.tool}<br/>
+
+            <button onclick="approve(${a.approval_id})">Approve</button>
+            <button onclick="reject(${a.approval_id})">Reject</button>
+          </div>
+        `).join("");
+      }
+    });
+
+    function approve(id) {
+      fetch(`/api/agent/approval/${id}/approve/`, { method: "POST" })
+        .then(() => fetch(`/api/agent/approval/${id}/resume/`, { method: "POST" }));
+    }
+
+    function reject(id) {
+      fetch(`/api/agent/approval/${id}/reject/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "reason=Rejected by admin",
+      });
+    }
+  </script>
+</body>
+</html>

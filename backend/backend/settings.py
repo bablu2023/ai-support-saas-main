@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "knowledge",
     "dashboard",
     "newuser",
+    "agents",
 ]
 
 
@@ -181,6 +182,28 @@ else:
 
 
 
+
+# =========================
+# REDIS
+# =========================
+if os.getenv("USE_REDIS", "false") == "true":
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [os.getenv("REDIS_URL")],
+            },
+        }
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        }
+    }
+
+
+
 # =========================
 # PASSWORD VALIDATION
 # =========================
@@ -221,6 +244,16 @@ LOGIN_URL = "/accounts/login/"
 
 LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/login/"
+
+
+# =========================
+# CELERY
+# =========================
+CELERY_BROKER_URL = REDIS_URL
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_BACKEND = REDIS_URL
+
 
 
 

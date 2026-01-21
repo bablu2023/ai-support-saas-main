@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.shortcuts import render
 from django.contrib.auth import views as auth_views
 
+
 def landing(request):
     return render(request, "pages/landing.html")
 
@@ -27,6 +28,10 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view()),
     path("dashboard/", include("dashboard.urls")),
     path("billing/", include("billing.urls")),
+    
+
+    path("approvals/", lambda r: render(r, "approvals.html")),
+
 
 ]
 

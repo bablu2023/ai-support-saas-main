@@ -33,6 +33,31 @@ from organizations.models import OrganizationMember
 
 from agents.workflow_agent import WorkflowAgent
 
+
+
+from agents.models import AgentApproval
+from django.utils.timezone import now
+
+
+
+from django.views.decorators.http import require_POST
+
+
+from agents.realtime import push_agent_status
+
+
+from agents.executor import run_agent
+
+from agents.models import AgentApproval
+
+from agents.tasks import run_workflow_agent_task
+
+
+
+
+
+
+
 # =========================
 # CHAT API (ENFORCED)
 # =========================
@@ -344,5 +369,212 @@ def agent_workflow(request):
 
 
 
+def approve_tool(request, approval_id):
+    approval = AgentApproval.objects.get(id=approval_id)
+    org = approval.run.organization
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"detail": "Auth required"}, status=401)
+
+    if not approval.run.organization.members.filter(
+        user=request.user,
+        role__in=[ORG_OWNER, ORG_ADMIN]
+    ).exists():
+        return JsonResponse({"detail": "Permission denied"}, status=403)
+
+    approval.status = "approved"
+    approval.decided_by = request.user
+    approval.decided_at = now()
+    approval.save()
+
+    return JsonResponse({"status": "approved"})
 
 
+
+
+@require_POST
+def approve_agent_tool(request, approval_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({"detail": "Authentication required"}, status=401)
+
+    try:
+        approval = AgentApproval.objects.select_related(
+            "run", "run__organization"
+        ).get(id=approval_id)
+    except AgentApproval.DoesNotExist:
+        return JsonResponse({"detail": "Approval not found"}, status=404)
+
+    org = approval.run.organization
+
+    # 🔐 ROLE CHECK
+    if not org.members.filter(
+        user=request.user,
+        role__in=[ORG_OWNER, ORG_ADMIN],
+    ).exists():
+        return JsonResponse({"detail": "Permission denied"}, status=403)
+
+    if approval.status != "pending":
+        return JsonResponse(
+            {"detail": f"Already {approval.status}"},
+            status=400,
+        )
+
+    approval.status = "approved"
+    approval.decided_by = request.user
+    approval.decided_at = now()
+    approval.save()
+
+    push_agent_status(approval.run.user.id, {
+        "status": "approval_approved",
+        "approval_id": approval.id,
+        "tool": approval.tool_name,
+    })
+
+    return JsonResponse({
+        "status": "approved",
+        "approval_id": approval.id,
+    })
+
+
+@require_POST
+def reject_agent_tool(request, approval_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({"detail": "Authentication required"}, status=401)
+
+    try:
+        approval = AgentApproval.objects.select_related(
+            "run", "run__organization"
+        ).get(id=approval_id)
+    except AgentApproval.DoesNotExist:
+        return JsonResponse({"detail": "Approval not found"}, status=404)
+
+    org = approval.run.organization
+    reason = request.POST.get("reason", "")
+
+    # 🔐 ROLE CHECK
+    if not org.members.filter(
+        user=request.user,
+        role__in=[ORG_OWNER, ORG_ADMIN],
+    ).exists():
+        return JsonResponse({"detail": "Permission denied"}, status=403)
+
+    if approval.status != "pending":
+        return JsonResponse(
+            {"detail": f"Already {approval.status}"},
+            status=400,
+        )
+
+    approval.status = "rejected"
+    approval.decided_by = request.user
+    approval.decided_at = now()
+    approval.reason = reason
+    approval.save()
+
+    push_agent_status(approval.run.user.id, {
+        "status": "approval_rejected",
+        "approval_id": approval.id,
+        "tool": approval.tool_name,
+        "reason": reason,
+    })
+
+    return JsonResponse({
+        "status": "rejected",
+        "approval_id": approval.id,
+    })
+
+def resume_agent(request, approval_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({"detail": "Auth required"}, status=401)
+
+    try:
+        approval = AgentApproval.objects.select_related(
+            "run", "run__organization"
+        ).get(id=approval_id)
+    except AgentApproval.DoesNotExist:
+        return JsonResponse({"detail": "Approval not found"}, status=404)
+
+    if approval.status != "approved":
+        return JsonResponse(
+            {"detail": "Approval not granted"},
+            status=400,
+        )
+
+    run = approval.run
+
+    if not run.organization.members.filter(user=request.user).exists():
+        return JsonResponse({"detail": "Permission denied"}, status=403)
+
+    # 🔁 resume agent
+    result = run_agent(
+        agent_class=WorkflowAgent,
+        request=request,
+        input_text=run.input_text,
+        resume=True,                 # 👈 important
+        existing_run=run,           # 👈 reuse run
+    )
+
+    return JsonResponse({
+        "status": "resumed",
+        "run_id": run.id,
+        "output": result.output,
+    })
+
+
+
+
+
+def pending_approvals(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"detail": "Auth required"}, status=401)
+
+    approvals = AgentApproval.objects.filter(
+        status="pending",
+        run__organization__members__user=request.user,
+    ).select_related("run")
+
+    return JsonResponse([
+        {
+            "approval_id": a.id,
+            "tool": a.tool_name,
+            "agent": a.run.agent_name,
+            "run_id": a.run.id,
+        }
+        for a in approvals
+    ], safe=False)
+
+
+def agent_task(request):
+    input_text = request.POST.get("input")
+    if not input_text:
+        return JsonResponse({"detail": "Input required"}, status=400)
+
+    # enqueue async agent
+    task = run_workflow_agent_task.delay(
+        request.organization.id,
+        request.user.id,
+        input_text,
+    )
+
+    return JsonResponse({
+        "status": "queued",
+        "task_id": task.id,
+    }, status=202)
+
+
+
+def resume_agent(request, approval_id):
+    approval = AgentApproval.objects.get(id=approval_id)
+    run = approval.run
+
+    run_workflow_agent_task.delay(
+        run.organization.id,
+        run.user.id,
+        run.input_text,
+        resume=True,
+        run_id=run.id,
+    )
+
+    return JsonResponse({
+        "status": "resumed",
+        "run_id": run.id,
+    })
